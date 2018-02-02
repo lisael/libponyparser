@@ -2,10 +2,10 @@ import os
 from pprint import pprint
 from unittest import skipIf
 
-from groom.lexer import Lexer
-from groom.parser import Parser
-from groom.ast import nodes
-from groom.utils import find_pony_stdlib_path
+from ponyparser.lexer import Lexer
+from ponyparser.parser import Parser
+from ponyparser.ast import nodes
+from ponyparser.utils import find_pony_stdlib_path
 
 
 parsers_cache = {}

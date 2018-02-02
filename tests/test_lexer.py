@@ -1,8 +1,8 @@
 import os
 from unittest import skipIf
 
-from groom.lexer import lex_raw
-from groom.utils import find_pony_stdlib_path
+from ponyparser.lexer import lex_raw
+from ponyparser.utils import find_pony_stdlib_path
 
 
 HERE = os.path.dirname(os.path.realpath(__file__))

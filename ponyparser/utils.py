@@ -6,7 +6,7 @@ from subprocess import check_output
 
 
 def find_pony_stdlib_path():
-    path = os.environ.get("GROOM_PONY_STDLIB", None)
+    path = os.environ.get("PONY_STDLIB", None)
     if path is None:
         ponyc_path = check_output(["which", "ponyc"])
         ponyc_path = Path(ponyc_path.decode().strip())

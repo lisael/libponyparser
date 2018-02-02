@@ -1,6 +1,6 @@
 import ply.yacc as yacc
-from groom.lexer import tokens  # noqa needed by yacc.yacc
-from groom.ast import nodes
+from ponyparser.lexer import tokens  # noqa needed by yacc.yacc
+from ponyparser.ast import nodes
 
 
 # Known missing constructs and bugs
