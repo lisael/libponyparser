@@ -12,10 +12,9 @@ parsers_cache = {}
 
 def parse_code(data, expected=None, verbose=False, **parser_opts):
     cache_key = tuple(parser_opts.items())
-    parser = parsers_cache.setdefault(
-            cache_key,
-            Parser(**parser_opts)
-            )
+    if cache_key not in parsers_cache:
+        parsers_cache[cache_key] = Parser(**parser_opts)
+    parser = parsers_cache[cache_key]
     tree = parser.parse(data, lexer=Lexer(), debug=verbose)
     result = tree.as_dict() if isinstance(tree, nodes.Node) else tree
     if isinstance(result, list):

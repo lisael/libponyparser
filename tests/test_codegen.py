@@ -79,17 +79,6 @@ def test_ifdef():
     data = """
         ifdef os_haiku then false else "hello" end
     """
-    expected = {
-        'annotations': [],
-        'assertion': {'id': {'id': 'os_haiku', 'node_type': 'id'},
-                      'node_type': 'reference'},
-        'else_': {'node_type': 'seq',
-                  'seq': [{'node_type': 'string', 'value': '"hello"'}]},
-        'else_annotations': [],
-        'members': {'node_type': 'seq',
-                    'seq': [{'node_type': 'false', 'value': 'false'}]},
-        'node_type': 'ifdef'
-    }
     parse_code(data, start='ifdef')
 
 
