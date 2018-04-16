@@ -7,17 +7,18 @@ def validate_ast(ast, expected_code):
 def test_method():
     ast = FunMethod(
         annotations = [
-            IdNode(id="annot1"),
-            IdNode(id="annot2")
+            "annot1",
+            "annot2"
         ],
-        id=IdNode(id="my_function"),
-        params=ParamsNode(params=[]),
-        return_type=Nominal(id=IdNode(id="String")),
-        body=SeqNode(seq=[
-            StringNode(value='"Hi!"')
-        ])
+        id="my_function",
+        params=[],
+        return_type=Nominal("String"),
+        body=SeqNode(
+            StringNode('"Hi!"')
+        )
     )
-    validate_ast(ast,
-    r'''fun \annot1, annot2\ my_function(): String =>
+    validate_ast(
+        ast,
+        r'''fun \annot1, annot2\ my_function(): String =>
   "Hi!"
 ''')

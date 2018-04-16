@@ -40,9 +40,21 @@ class Node(metaclass=NodeMeta):
     """
     AST node base class
     """
+    mandatory_attributes = []
     def __init__(self, **kwargs):
         for attrname in self.node_attributes:
-            setattr(self, attrname, kwargs.pop(attrname, None))
+            try:
+                val = kwargs.pop(attrname)
+            except KeyError:
+                if attrname in self.mandatory_attributes:
+                    raise TypeError("%s must be defined" % attrname)
+                else:
+                    val = None
+            if val and attrname.endswith("annotations"):
+                val = [IdNode(id=item) if isinstance(item, str) else item for item in val]
+            if val and (not isinstance(self, IdNode)) and attrname == "id" and isinstance(val, str):
+                val = IdNode(id=val)
+            setattr(self, attrname, val)
 
     def as_dict(self):
         result = dict(node_type=self.node_type)
@@ -183,6 +195,16 @@ class TypeArgs(Node):
 class Nominal(Node):
     node_type = "nominal"
     node_attributes = ["package", "id", "typeargs", "cap", "cap_modifier"]
+    mandatory_attributes = ['id']
+
+    def __init__(self, *args, **kwargs):
+        if args:
+            name = args[0]
+            if '.' in args:
+                kwargs["package"], kwargs["id"] = name.split('.')
+            else:
+                kwargs['id'] = name
+        super(Nominal, self).__init__(**kwargs)
 
     def _as_pony(self):
         package = "%s." % self.package._as_pony() if self.package else ""
@@ -219,6 +241,11 @@ class ArrowNode(Node):
 class SeqNode(Node):
     node_type = "seq"
     node_attributes = ["seq"]
+
+    def __init__(self, *seq, **kwargs):
+        if seq:
+            kwargs["seq"] = seq
+        super(SeqNode, self).__init__(**kwargs)
 
     def _as_pony(self, sep="\n"):
         return sep.join([s._as_pony() for s in self.seq])
@@ -328,6 +355,12 @@ class MethodNode(Node):
     node_attributes = ["docstring", "annotations", "id", "capability",
             "typeparams", "params", "return_type", "is_partial", "guard",
             "body"]
+
+    def __init__(self, **kwargs):
+        params = kwargs.get('params', [])
+        if isinstance(params, list):
+            kwargs['params'] = ParamsNode(params=params)
+        super(MethodNode, self).__init__(**kwargs)
 
     def _as_pony(self):
         return "%s%s%s %s%s%s%s%s%s%s%s" % (
@@ -449,6 +482,11 @@ class ParamNode(Node):
 class ParamsNode(Node):
     node_type = "params"
     node_attributes = ["params"]
+
+    def __init__(self, *args, **kwargs):
+        if args:
+            kwargs["params"] = args
+        super(ParamsNode, self).__init__(**kwargs)
 
     def _as_pony(self):
         return "(%s)" % ", ".join([p._as_pony() for p in self.params])

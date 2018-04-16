@@ -95,7 +95,7 @@ def test_ifdef():
 #     parse_code(data, start='ifdef')
 
 
-PONY_FILE=None
+PONY_FILE = None
 
 @skipIf(os.environ.get("SHORT_TESTS", 0), "perform short tests")
 def test_parse_stdlib():
