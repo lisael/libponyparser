@@ -300,14 +300,15 @@ class LetNode(DeclNode):
 
 
 class FieldNode(Node):
-    node_attributes = ["id", "type", "default"]
+    node_attributes = ["id", "type", "default", "docstring"]
 
     def _as_pony(self):
-        return "%s %s: %s%s" % (
+        return "%s %s: %s%s%s" % (
                 self.node_type[1:],
                 self.id._as_pony(),
                 self.type._as_pony(),
-                self._pony_attr("default", " = %s")
+                self._pony_attr("default", " = %s"),
+                self._pony_attr("docstring", "\n\x08%s\n\x15")
         )
 
 

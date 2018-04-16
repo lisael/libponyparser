@@ -531,14 +531,14 @@ field_classes = {
 
 def p_field(p):
     """
-    field : varkw id ':' type '=' infix
-          | varkw id ':' type
+    field : varkw id ':' type '=' infix docstring
+          | varkw id ':' type docstring
     """
     # p[0] = p[1]
-    if len(p) == 7:
-        p[0] = field_classes[p[1]](id=p[2], type=p[4], default=p[6])
+    if len(p) == 8:
+        p[0] = field_classes[p[1]](id=p[2], type=p[4], default=p[6], docstring=p[7])
     else:
-        p[0] = field_classes[p[1]](id=p[2], type=p[4])
+        p[0] = field_classes[p[1]](id=p[2], type=p[4], docstring=p[5])
 
 
 def p_varkw(p):
@@ -1108,7 +1108,7 @@ def p_meth_decl(p):
 
 def p_method(p):
     """
-    method : meth_decl meth_cap parametrised_id params meth_type  maybe_partial docstring guard body
+    method : meth_decl meth_cap parametrised_id params meth_type maybe_partial docstring guard body
     """
     p[0] = method_kinds[p[1][0]](annotations=p[1][1],
                                  capability=p[2], id=p[3][0],

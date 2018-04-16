@@ -924,11 +924,15 @@ def test_postfix():
 
 
 def test_fields():
-    data = """
+    data = '''
         let _notify: ReadlineNotify
         let _out: OutStream
-    """
+        """
+        with docstring...
+        """
+    '''
     expected = [{'default': None,
+                 'docstring': None,
                  'id': {'id': '_notify', 'node_type': 'id'},
                  'node_type': 'flet',
                  'type': {'cap': None,
@@ -938,6 +942,8 @@ def test_fields():
                           'package': None,
                           'typeargs': []}},
                 {'default': None,
+                 'docstring': {'node_type': 'string',
+                               'value': '"""\n        with docstring...\n        """'},
                  'id': {'id': '_out', 'node_type': 'id'},
                  'node_type': 'flet',
                  'type': {'cap': None,
@@ -1049,6 +1055,7 @@ def test_object():
         'annotations': [],
         'cap': None,
         'members': [{'default': {'node_type': 'this'},
+                     'docstring': None,
                      'id': {'id': 'term', 'node_type': 'id'},
                      'node_type': 'flet',
                      'type': {'cap': None,
