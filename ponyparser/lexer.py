@@ -104,6 +104,8 @@ tokens = [
     "MINUS_TILDE_NEW",
 ] + list(set(reserved.values()))
 
+states = (("nestedcomment", "exclusive"),)
+
 literals = ":()[]{}=.!@|,;^?<>~*/%#&"
 HEX = r'[0-9a-zA-Z]'
 HEX_ESC = f"(\\\\x{HEX}{{2}})"
@@ -127,7 +129,6 @@ ID = f"({LETTER}|_) ({LETTER}|{DIGIT}|_|')*"
 NEWLINE = r'(\n(\r|\s)*)'
 WS = f"({ NEWLINE }) | \\s+"
 
-NESTEDCOMMENT = r'/\* ( [^*] | \*(?!/) )* \*/'
 t_LINECOMMENT = r'//[^\n]+'
 
 LPAREN_NEW = f'( {NEWLINE} \\( )'
@@ -163,10 +164,32 @@ def t_STRING(t):
     return t
 
 
-@TOKEN(NESTEDCOMMENT)
-def t_NESTEDCOMMENT(t):
-    t.lexer.lineno += t.value.count("\n")
-    return t
+def t_NESTEDCOMMENT_START(t):
+    r'/\*'
+    t.lexer.comment_level = 1
+    t.lexer.comment_start_pos = t.lexer.lexpos - 2
+    t.lexer.begin("nestedcomment")
+
+
+def t_nestedcomment_INNER_COMMENT_START(t):
+    r'/\*'
+    t.lexer.comment_level += 1
+
+
+def t_nestedcomment_TEXT(t):
+    r'[^*] | \*(?!/)'
+
+
+def t_nestedcomment_NESTEDCOMMENT_END(t):
+    r'\*/'
+    t.lexer.comment_level -= 1
+    if t.lexer.comment_level == 0:
+        t.value = t.lexer.lexdata[t.lexer.comment_start_pos:t.lexer.lexpos+1]
+        t.type = "NESTEDCOMMENT"
+        t.lexpos = t.lexer.comment_start_pos
+        t.lexer.lineno += t.value.count('\n')
+        t.lexer.begin("INITIAL")
+        return t
 
 
 @TOKEN(INT)
@@ -241,6 +264,11 @@ def t_ID(t):
 
 
 def t_error(t):
+    raise LexError("Error at line {}: {}".format(
+        t.lexer.lineno, repr(t.lexer.lexdata[t.lexer.lexpos])), "")
+
+
+def t_nestedcomment_error(t):
     raise LexError("Error at line {}: {}".format(
         t.lexer.lineno, repr(t.lexer.lexdata[t.lexer.lexpos])), "")
 

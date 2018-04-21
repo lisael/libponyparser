@@ -30,6 +30,7 @@ def check_token(data, expected_type):
     lexer = lex_raw(data)
     t = lexer.token()
     assert(t == Token(expected_type, data, 1, 0))
+    assert(t.value == data)
 
 
 def test_lex():
@@ -50,6 +51,10 @@ def test_float():
 
 def test_lparen():
     check_token("(", "LPAREN")
+
+def test_comments():
+    check_token("/* a comment */", "NESTEDCOMMENT")
+    check_token("/* a comment /* and a /* nested */ one */ */", "NESTEDCOMMENT")
 
 
 def test_lparen_new():
