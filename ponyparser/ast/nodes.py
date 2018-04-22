@@ -453,6 +453,9 @@ class IntNode(LiteralNode):
 
 class FloatNode(LiteralNode):
     node_type = "float"
+    def __init__(self, value, minus="", **kwargs):
+        value = minus.strip() + value
+        super(FloatNode, self).__init__(value, **kwargs)
 
 
 class StringNode(LiteralNode):

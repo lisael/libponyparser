@@ -227,8 +227,13 @@ def p_int(p):
 def p_float(p):
     """
     float : FLOAT
+          | MINUS FLOAT
+          | MINUS_NEW FLOAT
     """
-    p[0] = nodes.FloatNode(p[1])
+    if len(p) == 2:
+        p[0] = nodes.FloatNode(p[1])
+    else:
+        p[0] = nodes.FloatNode(p[2], p[1])
 
 
 def p_string(p):

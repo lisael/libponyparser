@@ -32,7 +32,7 @@ def test_float():
     data = """
         -3.3
     """
-    expected = {'node_type': 'float', 'value': '3.3'}
+    expected = {'node_type': 'float', 'value': '-3.3'}
     parse_code(data, expected, verbose=VERBOSE, start="float")
 
 
