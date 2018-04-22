@@ -1,17 +1,5 @@
 """
 pony lexer
-
-WIP!!!
-
-This lexes the whole pony standard library... but the correctness is still
-to be proven
-
-TODO:
-    - nested commnents (/* /* */ */)
-      Did not search about recursive lexer rules...
-    - error handling (define t_error)
-
-
 """
 from io import IOBase
 
@@ -300,3 +288,11 @@ class Lexer():
                 "WS", "NEWLINE", "LINECOMMENT", "NESTEDCOMMENT"):
             return self.token()
         return t
+
+    @property
+    def lineno(self):
+        return self._lexer.lineno
+
+    @property
+    def lexpos(self):
+        return self._lexer.lexpos
