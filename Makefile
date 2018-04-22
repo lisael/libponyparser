@@ -1,4 +1,4 @@
-PYTEST?=py.test
+PYTEST?=python3 -m pytest
 
 test:
 	${PYTEST} -s -v tests
