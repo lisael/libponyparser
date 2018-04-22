@@ -3,19 +3,16 @@ from ponyparser.lexer import tokens  # noqa needed by yacc.yacc
 from ponyparser.ast import nodes
 
 
-# Known missing constructs and bugs
-#    - # postfix (???)
-
 def p_module(p):
     """
     module : docstring uses class_defs
     """
-    p[0] = nodes.ModuleNode(docstring=p[1], uses=p[2], class_defs=p[3])
+    p[0] = nodes.ModuleNode(docstring=p[1], uses=p[2], class_defs=p[3], production=p)
 
 
-# def p_error(p):
-#     import ipdb; ppp=p; ipdb.set_trace()
-#     raise ValueError((p.value, p.lineno))
+def p_error(p):
+    # import ipdb; ppp=p; ipdb.set_trace()
+    raise ValueError((p.value, p.lineno))
 
 
 def p_anyparen(p):
@@ -43,7 +40,7 @@ def p_id(p):
     """
     id : ID
     """
-    p[0] = nodes.IdNode(id=p[1])
+    p[0] = nodes.IdNode(id=p[1], production=p)
 
 
 def p_uses(p):
@@ -68,13 +65,15 @@ def p_use(p):
         p[0] = nodes.UseNode(
                 id=p[2][0],
                 ffidecl=p[2][1],
-                guard=p[3]
+                guard=p[3],
+                production=p
                 )
     else:
         p[0] = nodes.UseNode(
                 id=p[2][0],
                 package=p[2][1],
-                guard=p[3]
+                guard=p[3],
+                production=p
                 )
 
 
@@ -106,14 +105,14 @@ def p_use_ffi(p):
     """
     use_ffi : '@' id_or_string typeargs params maybe_partial
     """
-    p[0] = nodes.FFIDeclNode(id=p[2], typeargs=p[3], params=p[4], partial=p[5])
+    p[0] = nodes.FFIDeclNode(id=p[2], typeargs=p[3], params=p[4], partial=p[5], production=p)
 
 
 def p_typeargs(p):
     """
     typeargs : LSQUARE typearglist ']'
     """
-    p[0] = nodes.TypeArgs(typeargs=p[2])
+    p[0] = nodes.TypeArgs(typeargs=p[2], production=p)
 
 
 def p_maybe_typeargs(p):
@@ -166,7 +165,7 @@ def p_typeparams(p):
     """
     typeparams : LSQUARE typeparams_list ']'
     """
-    p[0] = nodes.TypeParamsNode(members=p[2])
+    p[0] = nodes.TypeParamsNode(members=p[2], production=p)
 
 
 def p_typeparams_list(p):
@@ -186,9 +185,9 @@ def p_typeparam(p):
               | id maybe_typed '=' typearg
     """
     if len(p) == 3:
-        p[0] = nodes.TypeParamNode(id=p[1], type=p[2])
+        p[0] = nodes.TypeParamNode(id=p[1], type=p[2], production=p)
     else:
-        p[0] = nodes.TypeParamNode(id=p[1], type=p[2], typearg=p[4])
+        p[0] = nodes.TypeParamNode(id=p[1], type=p[2], typearg=p[4], production=p)
 
 
 def p_typearg(p):
@@ -207,21 +206,21 @@ def p_true(p):
     """
     true : TRUE
     """
-    p[0] = nodes.TrueNode(p[1])
+    p[0] = nodes.TrueNode(p[1], production=p)
 
 
 def p_false(p):
     """
     false : FALSE
     """
-    p[0] = nodes.FalseNode(p[1])
+    p[0] = nodes.FalseNode(p[1], production=p)
 
 
 def p_int(p):
     """
     int : INT
     """
-    p[0] = nodes.IntNode(p[1])
+    p[0] = nodes.IntNode(p[1], production=p)
 
 
 def p_float(p):
@@ -231,16 +230,16 @@ def p_float(p):
           | MINUS_NEW FLOAT
     """
     if len(p) == 2:
-        p[0] = nodes.FloatNode(p[1])
+        p[0] = nodes.FloatNode(p[1], production=p)
     else:
-        p[0] = nodes.FloatNode(p[2], p[1])
+        p[0] = nodes.FloatNode(p[2], p[1], production=p)
 
 
 def p_string(p):
     """
     string : STRING
     """
-    p[0] = nodes.StringNode(p[1])
+    p[0] = nodes.StringNode(p[1], production=p)
 
 
 def p_literal(p):
@@ -262,7 +261,7 @@ def p_type(p):
     if len(p) == 2:
         p[0] = p[1]
     else:
-        p[0] = nodes.ArrowNode(origin=p[1], target=p[3])
+        p[0] = nodes.ArrowNode(origin=p[1], target=p[3], production=p)
 
 
 def p_atomtype(p):
@@ -288,14 +287,19 @@ def p_barelambdatype(p):
                             return_type=p[2].return_type,
                             is_partial=p[2].is_partial,
                             cap=p[2][0].cap,
-                            cap_modifier=p[2].cap_modifier)
+                            cap_modifier=p[2].cap_modifier,
+                            production=p
+                            )
 
 
 def p_lambdatype(p):
     """
     lambdatype : '{' cap maybe_id maybe_typeparams anylparen type_list ')' maybe_typed maybe_partial '}' typecap
     """
-    typeparams = nodes.ParamsNode(members=p[4]) if p[4] is not None else None
+    if p[4] is not None:
+        typeparams = nodes.ParamsNode(members=p[4], production=p)
+    else:
+        typeparams = None
     p[0] = nodes.LambdaType(cap2=p[2],
                             id=p[3],
                             typeparams=typeparams,
@@ -303,7 +307,8 @@ def p_lambdatype(p):
                             return_type=p[8],
                             is_partial=p[9],
                             cap=p[11][0],
-                            cap_modifier=p[11][1])
+                            cap_modifier=p[11][1],
+                            production=p)
 
 
 def p_type_list(p):
@@ -330,6 +335,7 @@ def p_nominal(p):
         typeargs=p[1][2],
         cap=p[2][0],
         cap_modifier=p[2][1],
+        production=p
     )
 
 
@@ -384,9 +390,9 @@ def p_combined_types(p):
                    | anylparen infixtype ')'
     """
     if len(p) == 5:
-        p[0] = nodes.TupleTypeNode(members=[p[2]] + p[3])
+        p[0] = nodes.TupleTypeNode(members=[p[2]] + p[3], production=p)
     else:
-        p[0] = nodes.TupleTypeNode(members=[p[2]])
+        p[0] = nodes.TupleTypeNode(members=[p[2]], production=p)
 
 
 def p_tupletype(p):
@@ -413,14 +419,14 @@ def p_intersectiontype(p):
     """
     intersectiontype : type '&' infixtype
     """
-    p[0] = nodes.IntersectionNode(first=p[1], second=p[3])
+    p[0] = nodes.IntersectionNode(first=p[1], second=p[3], production=p)
 
 
 def p_uniontype(p):
     """
     uniontype : type '|' infixtype
     """
-    p[0] = nodes.UnionNode(first=p[1], second=p[3])
+    p[0] = nodes.UnionNode(first=p[1], second=p[3], production=p)
 
 
 def p_parametrised_id(p):
@@ -439,7 +445,7 @@ def p_provides(p):
     provides : IS type
              |
     """
-    p[0] =  None if len(p) == 1 else nodes.ProvidesNode(type=p[2])
+    p[0] =  None if len(p) == 1 else nodes.ProvidesNode(type=p[2], production=p)
 
 
 def p_class_decl(p):
@@ -480,7 +486,9 @@ def p_class_def(p):
             id=p[1][3],
             type_params=p[1][4],
             provides=p[1][5],
-            docstring=p[2], members=members)
+            docstring=p[2],
+            members=members,
+            production=p)
 
 
 def p_annotations(p):
@@ -541,9 +549,9 @@ def p_field(p):
     """
     # p[0] = p[1]
     if len(p) == 8:
-        p[0] = field_classes[p[1]](id=p[2], type=p[4], default=p[6], docstring=p[7])
+        p[0] = field_classes[p[1]](id=p[2], type=p[4], default=p[6], docstring=p[7], production=p)
     else:
-        p[0] = field_classes[p[1]](id=p[2], type=p[4], docstring=p[5])
+        p[0] = field_classes[p[1]](id=p[2], type=p[4], docstring=p[5], production=p)
 
 
 def p_varkw(p):
@@ -563,7 +571,7 @@ def p_infix(p):
     if len(p) == 3:
         result = p[1]
         for op in p[2]:
-            result = op(result)
+            result = op(result, production=p)
         p[0] = result
     else:
         p[0] = p[1]
@@ -594,14 +602,14 @@ class OperatorFactory(object):
         self.term = term
         self.partial = partial
 
-    def __call__(self, first):
+    def __call__(self, first, production=None):
         if self.operator == "as":
-            return nodes.AsNode(term=first, type=self.term)
+            return nodes.AsNode(term=first, type=self.term, production=production)
         elif self.operator == "=":
-            return nodes.AssignNode(first=first, second=self.term)
+            return nodes.AssignNode(first=first, second=self.term, production=production)
         else:
             return nodes.BinOpNode(operator=self.operator, first=first,
-                                   second=self.term, is_partial=self.partial)
+                                   second=self.term, is_partial=self.partial, production=production)
 
 
 def p_op(p):
@@ -635,7 +643,7 @@ def p_vardecl(p):
     """
     vardecl : varkw id maybe_typed
     """
-    p[0] = vardecl_classes[p[1]](id=p[2], type=p[3])
+    p[0] = vardecl_classes[p[1]](id=p[2], type=p[3], production=p)
 
 
 def p_pattern(p):
@@ -669,8 +677,7 @@ def p_term(p):
          | consume
          | pattern
     """
-    # TODO
-    p[0] = p[1] if isinstance(p[1], nodes.Node) else nodes.ReferenceNode(id=p[1])
+    p[0] = p[1] if isinstance(p[1], nodes.Node) else nodes.ReferenceNode(id=p[1], production=p)
 
 
 def p_nextterm(p):
@@ -688,7 +695,6 @@ def p_nextterm(p):
              | consume
              | nextpattern
     """
-    # TODO
     p_term(p)
 
 
@@ -701,7 +707,9 @@ def p_if(p):
             assertion=p[2][1],
             members=p[4],
             else_=p[5][1],
-            else_annotations=p[5][0])
+            else_annotations=p[5][0],
+            production=p
+            )
 
 
 def p_if_else(p):
@@ -721,7 +729,8 @@ def p_elseif(p):
             assertion=p[2][1],
             members=p[4],
             else_=p[5][1],
-            else_annotations=p[5][0]))
+            else_annotations=p[5][0],
+            production=p))
 
 
 def p_ifdef(p):
@@ -733,7 +742,8 @@ def p_ifdef(p):
             assertion=p[3],
             members=p[5],
             else_=p[6][1],
-            else_annotations=p[6][0]
+            else_annotations=p[6][0],
+            production=p
     )
 
 
@@ -754,7 +764,8 @@ def p_elseifdef(p):
             assertion=p[3],
             members=p[5],
             else_=p[6][1],
-            else_annotations=p[6][0]))
+            else_annotations=p[6][0],
+            production=p))
 
 
 def p_type_assertion(p):
@@ -763,7 +774,8 @@ def p_type_assertion(p):
     """
     p[0] = nodes.TypeAssertionNode(
                   child_type=p[1],
-                  parent_type=p[3]
+                  parent_type=p[3],
+                  production=p
     )
 
 
@@ -777,6 +789,7 @@ def p_iftype(p):
             members=p[5],
             else_=p[6][1],
             else_annotations=p[6][0],
+            production=p
     )
 
 
@@ -798,6 +811,7 @@ def p_elseiftype(p):
             members=p[5],
             else_=p[6][1],
             else_annotations=p[6][0],
+            production=p
     ))
 
 
@@ -810,7 +824,8 @@ def p_match(p):
             seq=p[3],
             cases=p[4],
             else_=p[5][1],
-            else_annotations=p[5][0]
+            else_annotations=p[5][0],
+            production=p
     )
 
 
@@ -852,7 +867,8 @@ def p_caseexpr(p):
             annotations=p[2],
             pattern=p[3],
             guard=p[4],
-            action=p[5]
+            action=p[5],
+            production=p
     )
 
 
@@ -865,7 +881,8 @@ def p_while(p):
             assertion=p[2][1],
             members=p[4],
             else_=p[5][1],
-            else_annotations=p[5][0])
+            else_annotations=p[5][0],
+            production=p)
 
 
 def p_repeat(p):
@@ -877,7 +894,9 @@ def p_repeat(p):
             assertion=p[4][1],
             members=p[2],
             else_=p[5][1],
-            else_annotations=p[5][0])
+            else_annotations=p[5][0],
+            production=p
+            )
 
 
 def p_then(p):
@@ -898,11 +917,12 @@ def p_for(p):
             sequence=p[5],
             members=p[7],
             else_=p[8][1],
-            else_annotations=p[8][0]
+            else_annotations=p[8][0],
+            production=p
     )
 
 
-def _flatten_idseq(seq):
+def _flatten_idseq(seq, production=None):
     result = []
     for item in seq:
         if isinstance(item, nodes.TupleNode):
@@ -913,7 +933,7 @@ def _flatten_idseq(seq):
                 result.append(item.members[0])
         else:
             result.append(item)
-    return nodes.TupleNode(members=result)
+    return nodes.TupleNode(members=result, production=production)
 
 
 def p_idseq(p):
@@ -921,8 +941,11 @@ def p_idseq(p):
     idseq : id
           | anylparen idseq_list ')'
     """
-    idseq = [nodes.LetNode(id=p[1])] if len(p) == 2 else p[2]
-    p[0] = _flatten_idseq(idseq)
+    if len(p) == 2:
+        idseq = [nodes.LetNode(id=p[1], production=p)]
+    else:
+        idseq = p[2]
+    p[0] = _flatten_idseq(idseq, p)
 
 
 def p_idseq_list(p):
@@ -939,10 +962,11 @@ def p_with(p):
     """
     p[0] = nodes.WithNode(
             annotations=p[2],
-            elems=nodes.SeqNode(seq=p[3]),
+            elems=nodes.SeqNode(seq=p[3], production=p),
             members=p[5],
             else_=p[6][1],
-            else_annotations=p[6][0]
+            else_annotations=p[6][0],
+            production=p
     )
 
 
@@ -962,7 +986,7 @@ def p_withelem(p):
     idseq = p[1]
     if len(members) == 1 and isinstance(members[0], nodes.LetNode):
         idseq = members[0]
-    p[0] = nodes.SeqNode(seq=[idseq, p[3]])
+    p[0] = nodes.SeqNode(seq=[idseq, p[3]], production=p)
 
 
 def p_else_then(p):
@@ -983,6 +1007,7 @@ def p_try(p):
         else_annotations=p[4][0][0],
         then=p[4][1][1],
         then_annotations=p[4][1][0],
+        production=p
     )
 
 
@@ -993,7 +1018,8 @@ def p_recover(p):
     p[0] = nodes.RecoverNode(
             annotations=p[2],
             cap=p[3],
-            members=p[4])
+            members=p[4],
+            production=p)
 
 
 def p_else(p):
@@ -1008,7 +1034,7 @@ def p_consume(p):
     """
     consume : CONSUME cap term
     """
-    p[0] = nodes.ConsumeNode(cap=p[2], term=p[3])
+    p[0] = nodes.ConsumeNode(cap=p[2], term=p[3], production=p)
 
 
 def p_isop(p):
@@ -1123,7 +1149,7 @@ def p_method(p):
                                  is_partial=p[6],
                                  docstring=p[7],
                                  guard=p[8],
-                                 body=p[9])
+                                 body=p[9],production=p)
 
 
 def p_body(p):
@@ -1163,7 +1189,7 @@ def p_params(p):
     params : anylparen param_list ')'
            | anylparen ')'
     """
-    p[0] = nodes.ParamsNode(params=p[2]) if len(p) == 4 else nodes.ParamsNode(params=[])
+    p[0] = nodes.ParamsNode(params=p[2], production=p) if len(p) == 4 else nodes.ParamsNode(params=[], production=p)
 
 
 def p_param(p):
@@ -1173,13 +1199,13 @@ def p_param(p):
           | '.' '.' '.'
     """
     if p[1] == ".":
-        p[0] = nodes.ElipsisNode()
+        p[0] = nodes.ElipsisNode(production=p)
         return
     default = p[3] if len(p) == 4 else None
     id = p[1][0]
     if isinstance(id, nodes.ReferenceNode):
         id = id.id
-    p[0] = nodes.ParamNode(id=id, type=p[1][1], default=default)
+    p[0] = nodes.ParamNode(id=id, type=p[1][1], default=default, production=p)
 
 
 def p_param_1(p):
@@ -1196,7 +1222,7 @@ def p_parampattern(p):
     parampattern : parampatternprefix parampattern
                  | postfix
     """
-    p[0] = p[1](pattern=p[2]) if len(p) == 3 else p[1]
+    p[0] = p[1](pattern=p[2], production=p) if len(p) == 3 else p[1]
 
 
 def p_nextparampattern(p):
@@ -1252,15 +1278,15 @@ def p_postfix(p):
     """
     result = p[1]
     if isinstance(result, nodes.IdNode):
-        result = nodes.ReferenceNode(id=result)
+        result = nodes.ReferenceNode(id=result, production=p)
     for s in p[2]:
         if s[0] == '.':
-            result = nodes.DotNode(first=result, second=s[1])
+            result = nodes.DotNode(first=result, second=s[1], production=p)
         elif s[0] == 'call':
             result = nodes.CallNode(fun=result, positionalargs=s[1],
-                                    namedargs=s[2], is_partial=s[3])
+                                    namedargs=s[2], is_partial=s[3], production=p)
         elif s[0] == 'qualify':
-            result = nodes.QualifyNode(type=result, args=s[1])
+            result = nodes.QualifyNode(type=result, args=s[1], production=p)
     p[0] = result
 
 
@@ -1324,12 +1350,35 @@ def p_chain(p):
     p[0] = ('.>', p[3])
 
 
+class LstProduction:
+    def __init__(self, lst):
+        self.lst = lst
+        if lst:
+            self._linespan = lst[0].linespan[0], lst[-1].linespan[1]
+            self._lexspan = lst[0].lexspan[0], lst[-1].lexspan[1]
+        else:
+            self._linespan = 1,1
+            self._lexspan = 2,2
+
+    def linespan(self, _):
+        return self._linespan
+
+    def lexspan(self, _):
+        return self._lexspan
+
+    def __iter__(self):
+        yield None
+        for i in self.lst:
+            yield i
+
+
+
 def p_call(p):
     """
     call : LPAREN  positional named ')' maybe_partial
     """
-    p[0] = ('call', nodes.PositionalArgsNode(args=p[2]),
-            nodes.NamedArgsNode(args=p[3]), p[5])
+    p[0] = ('call', nodes.PositionalArgsNode(args=p[2], production=LstProduction(p[2])),
+            p[3], p[5])
 
 
 def p_positional(p):
@@ -1351,7 +1400,7 @@ def p_named(p):
     named : WHERE namedarglist
           |
     """
-    p[0] = p[2] if len(p) == 3 else []
+    p[0] = nodes.NamedArgsNode(args=p[2], production=p) if len(p) == 3 else nodes.NamedArgsNode(args=[], production=p)
 
 
 def p_namedarglist(p):
@@ -1366,14 +1415,14 @@ def p_namedarg(p):
     """
     namedarg : id '=' rawseq
     """
-    p[0] = nodes.NamedArgNode(id=p[1], value=p[3])
+    p[0] = nodes.NamedArgNode(id=p[1], value=p[3], production=p)
 
 
 def p_this(p):
     """
     this : THIS
     """
-    p[0] = nodes.ThisNode()
+    p[0] = nodes.ThisNode(production=p)
 
 
 def p_object(p):
@@ -1383,7 +1432,8 @@ def p_object(p):
     p[0] = nodes.ObjectNode(annotations=p[2],
                             cap=p[3],
                             provides=p[4],
-                            members=p[5])
+                            members=p[5],
+                            production=p)
 
 
 def p_atom(p):
@@ -1429,7 +1479,8 @@ def p_barelambda(p):
                                 type=p[2].type,
                                 is_partial=p[2].is_partial,
                                 body=p[2].body,
-                                cap2=p[2].cap2)
+                                cap2=p[2].cap2,
+                                production=p)
 
 
 def p_lambda(p):
@@ -1445,7 +1496,8 @@ def p_lambda(p):
                             type=p[8],
                             is_partial=p[9],
                             body=p[11],
-                            cap2=p[13])
+                            cap2=p[13],
+                            production=p)
 
 
 def p_maybe_lambdacaptures(p):
@@ -1460,7 +1512,7 @@ def p_lambdacaptures(p):
     """
     lambdacaptures : anylparen lambdacapture_list ')'
     """
-    p[0] = nodes.LambdaCaptures(members=p[2])
+    p[0] = nodes.LambdaCaptures(members=p[2], production=p)
 
 
 def p_lambdacapture_list(p):
@@ -1481,7 +1533,7 @@ def p_lambdacapture(p):
         p[0] = p[1]
     else:
         value = None if len(p) == 3 else p[4]
-        p[0] = nodes.LambdaCapture(id=p[1], type=p[2], value=value)
+        p[0] = nodes.LambdaCapture(id=p[1], type=p[2], value=value, production=p)
 
 
 def p_maybe_typeparams(p):
@@ -1512,7 +1564,7 @@ def p_array(p):
     """
     array : anysquare arraytype maybe_rawseq ']'
     """
-    p[0] = nodes.ArrayNode(type=p[2], members=p[3])
+    p[0] = nodes.ArrayNode(type=p[2], members=p[3], production=p)
 
 
 def p_nextarray(p):
@@ -1536,16 +1588,17 @@ def p_fficall(p):
     """
     p[0] = nodes.FFICallNode(id=p[2],
                              typeargs=p[3],
-                             positional=nodes.PositionalArgsNode(args=p[5]),
-                             named=nodes.NamedArgsNode(args=p[6]),
-                             partial=p[8])
+                             positional=nodes.PositionalArgsNode(args=p[5], production=LstProduction(p[5])),
+                             named=p[6],
+                             partial=p[8],
+                             production=p)
 
 
 def p_tuple(p):
     """
     tuple : anylparen rawseq tupletail ')'
     """
-    p[0] = nodes.TupleNode(members=[p[2]] + p[3])
+    p[0] = nodes.TupleNode(members=[p[2]] + p[3], production=p)
 
 
 def p_nexttuple(p):
@@ -1580,9 +1633,9 @@ def p_rawseq(p):
            | jump
     """
     if isinstance(p[1], list):
-        p[0] = nodes.SeqNode(seq=p[1])
+        p[0] = nodes.SeqNode(seq=p[1], production=p)
     else:
-        p[0] = nodes.SeqNode(seq=[p[1]])
+        p[0] = nodes.SeqNode(seq=[p[1]], production=p)
 
 
 def p_annotatedrawseq(p):
@@ -1634,7 +1687,7 @@ def p_jump(p):
     jump : jump_statement empty
          | jump_statement rawseq
     """
-    p[0] = p[1](seq=p[2])
+    p[0] = p[1](seq=p[2], production=p)
 
 
 def p_jump_statement(p):
@@ -1699,7 +1752,7 @@ class Parser(object):
         self._parser = yacc.yacc(*args, **kwargs)
 
     def parse(self, *args, **kwargs):
-        return self._parser.parse(*args, **kwargs)
+        return self._parser.parse(*args, tracking=True, **kwargs)
 
 
 if __name__ == "__main__":

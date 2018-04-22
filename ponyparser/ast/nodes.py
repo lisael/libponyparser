@@ -58,22 +58,7 @@ class Node(metaclass=NodeMeta):
         self.linespan = None
         self.lexspan = None
         self.tokens = []
-        p = None
-        if "production" in kwargs:
-            p = kwargs["production"]
-        else:
-            # TODO:
-            # This is realy ugly, grossly slow and may break with non-CPython
-            # interpreters. I use this to save a ton of dull typing in
-            # parser.py. Feel free to add `production=p` in all Node instanciations
-            # and send a PR :).
-            from ply.yacc import YaccProduction
-            import inspect
-            caller_frame = inspect.stack()[1].frame
-            for k, v in caller_frame.f_locals.items():
-                if k == "p" and isinstance(v, YaccProduction):
-                    p = v
-                    break
+        p = kwargs.get("production")
         if p:
             self.tokens = list(kwargs.get("production", [None]))[1:]
             self.linespan = p.linespan(0)
