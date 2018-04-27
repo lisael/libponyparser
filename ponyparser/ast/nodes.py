@@ -41,6 +41,7 @@ class Node(metaclass=NodeMeta):
     AST node base class
     """
     mandatory_attributes = []
+    node_attributes = []
     def __init__(self, **kwargs):
         for attrname in self.node_attributes:
             try:
@@ -79,6 +80,23 @@ class Node(metaclass=NodeMeta):
     def as_pony(self):
         return self._as_pony().replace("\x08", "").replace("\x15", "")
 
+    def _iter_node_list(self, lst):
+        for i in lst:
+            if isinstance(i, Node):
+                yield i
+            if isinstance(i, list):
+                for j in self._iter_node_list(i):
+                    yield j
+
+    def iter_children(self):
+        for att in self.node_attributes:
+            att = getattr(self, att, None)
+            if isinstance(att, Node):
+                yield att
+            elif isinstance(att, list):
+                for i in self._iter_node_list(att):
+                    yield i
+
 
     def _pony_attr(self, name, tmpl="%s", separator=", ", default=""):
         attr = getattr(self, name, None)
@@ -95,6 +113,11 @@ class Node(metaclass=NodeMeta):
         elif isinstance(attr, list):
             attr = separator.join([i._as_pony() for i in attr])
         return tmpl % attr
+
+
+class PackageNode(Node):
+    node_type = "package"
+    node_attributes = ["name", "modules"]
 
 
 class ModuleNode(Node):
