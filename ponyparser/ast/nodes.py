@@ -192,7 +192,7 @@ class TypeParamNode(Node):
         )
 
 
-class TypeArgs(Node):
+class TypeArgsNode(Node):
     node_type = "typeargs"
     node_attributes = ["typeargs"]
 
@@ -200,7 +200,7 @@ class TypeArgs(Node):
         return "[%s]" % ", ".join([a._as_pony() for a in self.typeargs])
 
 
-class Nominal(Node):
+class NominalNode(Node):
     node_type = "nominal"
     node_attributes = ["package", "id", "typeargs", "cap", "cap_modifier"]
     mandatory_attributes = ['id']
@@ -212,7 +212,7 @@ class Nominal(Node):
                 kwargs["package"], kwargs["id"] = name.split('.')
             else:
                 kwargs['id'] = name
-        super(Nominal, self).__init__(**kwargs)
+        super(NominalNode, self).__init__(**kwargs)
 
     def _as_pony(self):
         package = "%s." % self.package._as_pony() if self.package else ""
@@ -259,7 +259,7 @@ class SeqNode(Node):
         return sep.join([s._as_pony() for s in self.seq])
 
 
-class ClassNodeBase(Node):
+class BaseClassNode(Node):
     node_attributes = ["docstring", "annotations", "id",
                        "members", "cap", "provides", "type_params"]
 
@@ -274,31 +274,31 @@ class ClassNodeBase(Node):
         return "%s%s%s %s%s%s\n\x08%s%s\n\x15" % (decl, annotations, cap, self.id._as_pony(), params, provides, docstring, members)
 
 
-class ClassNode(ClassNodeBase):
+class ClassNode(BaseClassNode):
     node_type = "class"
 
 
-class TypeNode(ClassNodeBase):
+class TypeNode(BaseClassNode):
     node_type = "type"
 
 
-class PrimitiveNode(ClassNodeBase):
+class PrimitiveNode(BaseClassNode):
     node_type = "primitive"
 
 
-class ActorNode(ClassNodeBase):
+class ActorNode(BaseClassNode):
     node_type = "actor"
 
 
-class InterfaceNode(ClassNodeBase):
+class InterfaceNode(BaseClassNode):
     node_type = "interface"
 
 
-class StructNode(ClassNodeBase):
+class StructNode(BaseClassNode):
     node_type = "struct"
 
 
-class TraitNode(ClassNodeBase):
+class TraitNode(BaseClassNode):
     node_type = "trait"
 
 
@@ -387,15 +387,15 @@ class MethodNode(Node):
 
 
 
-class NewMethod(MethodNode):
+class NewMethodNode(MethodNode):
     node_type = "new"
 
 
-class FunMethod(MethodNode):
+class FunMethodNode(MethodNode):
     node_type = "fun"
 
 
-class BeMethod(MethodNode):
+class BeMethodNode(MethodNode):
     node_type = "be"
 
 
@@ -825,7 +825,7 @@ class BareLambdaNode(LambdaNode):
         return "@%s" % super(BareLambdaNode, self)._as_pony()
 
 
-class LambdaCaptures(Node):
+class LambdaCapturesNode(Node):
     node_type = "lambdacaptures"
     node_attributes = ["members"]
 
@@ -833,7 +833,7 @@ class LambdaCaptures(Node):
         return self._pony_attr("members", "(%s)")
 
 
-class LambdaCapture(Node):
+class LambdaCaptureNode(Node):
     node_type = "lambdacapture"
     node_attributes = ["id", "type", "value"]
 
@@ -860,7 +860,7 @@ class FFICallNode(Node):
         return "@%s%s(%s%s)%s" % (self.id._as_pony(), typeargs, pos, named, partial)
 
 
-class LambdaType(Node):
+class LambdaTypeNode(Node):
     node_type = "lambdatype"
     node_attributes = ["cap2", "id", "typeparams", "params", "return_type",
                        "is_partial", "cap", "cap_modifier"]
@@ -879,7 +879,7 @@ class LambdaType(Node):
 
 
 
-class BareLambdaType(Node):
+class BareLambdaTypeNode(Node):
     node_type = "barelambdatype"
     node_attributes = ["cap2", "id", "typeparams", "params", "return_type",
                        "is_partial", "cap", "cap_modifier"]

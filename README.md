@@ -66,7 +66,7 @@ the backward transformation to allow easy JSON serialisation of a complete AST
 It's now easy to write pony fragments:
 
 ```
->>> from ponyparser.ast.nodes import FunMethod, IdNode, ParamsNode, Nominal, SeqNode, StringNode
+>>> from ponyparser.ast.nodes import FunMethod, IdNode, ParamsNode, NominalNode, SeqNode, StringNode
 >>> meth = FunMethod(
 ...     annotations = [
 ...         IdNode(id="annot1"),
@@ -74,7 +74,7 @@ It's now easy to write pony fragments:
 ...     ],
 ...     id=IdNode(id="my_function"),
 ...     params=ParamsNode(params=[]),
-...     return_type=Nominal(id=IdNode(id="String")),
+...     return_type=NominalNode(id=IdNode(id="String")),
 ...     body=SeqNode(seq=[
 ...         StringNode(value='"Hi!"')
 ...     ])

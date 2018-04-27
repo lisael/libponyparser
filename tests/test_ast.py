@@ -1,18 +1,19 @@
-from ponyparser.ast.nodes import FunMethod, IdNode, ParamsNode, Nominal, SeqNode, StringNode
+from ponyparser.ast.nodes import FunMethodNode, IdNode, ParamsNode, NominalNode, SeqNode, StringNode
 
 
 def validate_ast(ast, expected_code):
     assert ast.pretty_pony() == expected_code
 
+
 def test_method():
-    ast = FunMethod(
-        annotations = [
+    ast = FunMethodNode(
+        annotations=[
             "annot1",
             "annot2"
         ],
         id="my_function",
         params=[],
-        return_type=Nominal("String"),
+        return_type=NominalNode("String"),
         body=SeqNode(
             StringNode('"Hi!"')
         )

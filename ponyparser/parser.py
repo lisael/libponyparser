@@ -112,7 +112,7 @@ def p_typeargs(p):
     """
     typeargs : LSQUARE typearglist ']'
     """
-    p[0] = nodes.TypeArgs(typeargs=p[2], production=p)
+    p[0] = nodes.TypeArgsNode(typeargs=p[2], production=p)
 
 
 def p_maybe_typeargs(p):
@@ -280,7 +280,7 @@ def p_barelambdatype(p):
     """
     barelambdatype : '@' lambdatype
     """
-    p[0] = nodes.BareLambdaType(cap2=p[2].cap2,
+    p[0] = nodes.BareLambdaTypeNode(cap2=p[2].cap2,
                             id=p[2].id,
                             typeparams=p[2].typeparams,
                             params=p[2].params,
@@ -300,7 +300,7 @@ def p_lambdatype(p):
         typeparams = nodes.ParamsNode(members=p[4], production=p)
     else:
         typeparams = None
-    p[0] = nodes.LambdaType(cap2=p[2],
+    p[0] = nodes.LambdaTypeNode(cap2=p[2],
                             id=p[3],
                             typeparams=typeparams,
                             params=p[6],
@@ -329,7 +329,7 @@ def p_nominal(p):
     """
     nominal : namespaced typecap
     """
-    p[0] = nodes.Nominal(
+    p[0] = nodes.NominalNode(
         package=p[1][0],
         id=p[1][1],
         typeargs=p[1][2],
@@ -1124,9 +1124,9 @@ def p_meth_cap(p):
 
 
 method_kinds = {
-    "new": nodes.NewMethod,
-    "fun": nodes.FunMethod,
-    "be": nodes.BeMethod
+    "new": nodes.NewMethodNode,
+    "fun": nodes.FunMethodNode,
+    "be": nodes.BeMethodNode
 }
 
 
@@ -1512,7 +1512,7 @@ def p_lambdacaptures(p):
     """
     lambdacaptures : anylparen lambdacapture_list ')'
     """
-    p[0] = nodes.LambdaCaptures(members=p[2], production=p)
+    p[0] = nodes.LambdaCapturesNode(members=p[2], production=p)
 
 
 def p_lambdacapture_list(p):
@@ -1533,7 +1533,7 @@ def p_lambdacapture(p):
         p[0] = p[1]
     else:
         value = None if len(p) == 3 else p[4]
-        p[0] = nodes.LambdaCapture(id=p[1], type=p[2], value=value, production=p)
+        p[0] = nodes.LambdaCaptureNode(id=p[1], type=p[2], value=value, production=p)
 
 
 def p_maybe_typeparams(p):
