@@ -36,12 +36,23 @@ def pretty_pony(data):
     return "\n".join(result)
 
 
+def iter_node_list(lst):
+    for i in lst:
+        if isinstance(i, Node):
+            yield i
+        if isinstance(i, list):
+            for j in iter_node_list(i):
+                yield j
+
+
 class Node(metaclass=NodeMeta):
     """
     AST node base class
     """
     mandatory_attributes = []
     node_attributes = []
+    does_scope = None
+
     def __init__(self, **kwargs):
         for attrname in self.node_attributes:
             try:
@@ -80,21 +91,16 @@ class Node(metaclass=NodeMeta):
     def as_pony(self):
         return self._as_pony().replace("\x08", "").replace("\x15", "")
 
-    def _iter_node_list(self, lst):
-        for i in lst:
-            if isinstance(i, Node):
-                yield i
-            if isinstance(i, list):
-                for j in self._iter_node_list(i):
-                    yield j
-
-    def iter_children(self):
-        for att in self.node_attributes:
+    def iter_children(self, only=None, exclude=None):
+        only = only if only is not None else self.node_attributes
+        exclude = exclude if exclude is not None else []
+        only = [att for att in only if att not in exclude]
+        for att in only:
             att = getattr(self, att, None)
             if isinstance(att, Node):
                 yield att
             elif isinstance(att, list):
-                for i in self._iter_node_list(att):
+                for i in iter_node_list(att):
                     yield i
 
 
@@ -117,12 +123,18 @@ class Node(metaclass=NodeMeta):
 
 class PackageNode(Node):
     node_type = "package"
-    node_attributes = ["name", "modules"]
+    node_attributes = ["name", "modules", "path"]
+    dose_scope = ["modules"]
+
+    def __init__(self, **kwargs):
+        super(PackageNode, self).__init__(**kwargs)
+        self.modules = self.modules if self.modules else []
 
 
 class ModuleNode(Node):
     node_type = "module"
     node_attributes = ["docstring", "name", "uses", "class_defs"]
+    does_scope = ["class_defs"]
 
     def _as_pony(self):
         docstring = self.docstring._as_pony() + "\n" if self.docstring else ""
@@ -272,6 +284,7 @@ class ArrowNode(Node):
 class SeqNode(Node):
     node_type = "seq"
     node_attributes = ["seq"]
+    does_scope = ["seq"]
 
     def __init__(self, *seq, **kwargs):
         if seq:
@@ -285,6 +298,7 @@ class SeqNode(Node):
 class BaseClassNode(Node):
     node_attributes = ["docstring", "annotations", "id",
                        "members", "cap", "provides", "type_params"]
+    does_scope = ["members"]
 
     def _as_pony(self):
         decl = self.node_type
@@ -386,6 +400,7 @@ class MethodNode(Node):
     node_attributes = ["docstring", "annotations", "id", "capability",
             "typeparams", "params", "return_type", "is_partial", "guard",
             "body"]
+    does_scope = ["params", "body"]
 
     def __init__(self, **kwargs):
         params = kwargs.get('params', [])
@@ -542,6 +557,7 @@ class IfNode(Node):
     node_type = "if"
     node_attributes = ["annotations", "else_", "else_annotations",
                        "assertion", "members"]
+    does_scope = ["assertion", "members"]
 
     def _as_pony(self, elseif=False):
         args = {}
@@ -571,11 +587,12 @@ class CallNode(Node):
 
     def _as_pony(self):
         return "%s(%s%s)%s" % (
-                self.fun._as_pony(),
-                self._pony_attr("positionalargs"),
-                self._pony_attr("namedargs", " where %s"),
-                self._pony_attr("is_partial")
+            self.fun._as_pony(),
+            self._pony_attr("positionalargs"),
+            self._pony_attr("namedargs", " where %s"),
+            self._pony_attr("is_partial")
         )
+
 
 class QualifyNode(Node):
     node_type = "qualify"
@@ -665,6 +682,7 @@ class MatchNode(Node):
     node_type = "match"
     node_attributes = ["annotations", "else_", "else_annotations",
                        "seq", "cases"]
+    does_scope = ["seq", "cases"]
 
     def _as_pony(self):
         args = {}
@@ -678,6 +696,7 @@ class MatchNode(Node):
 class CaseNode(Node):
     node_type = "case"
     node_attributes = ["annotations", "pattern", "guard", "action"]
+    does_scope = ["pattern", "action"]
 
     def _as_pony(self):
         args = {}
@@ -687,10 +706,12 @@ class CaseNode(Node):
         args["action"] = self._pony_attr("action", " => %s")
         return "| %(annotations)s%(pattern)s%(guard)s%(action)s" % args
 
+
 class WhileNode(Node):
     node_type = "while"
     node_attributes = ["else_", "annotations", "assertion", "members",
                        "else_annotations"]
+    dose_scope = ["assertion", "members"]
 
     def _as_pony(self):
         if self.else_:
@@ -712,6 +733,7 @@ class RepeatNode(Node):
     node_type = "repeat"
     node_attributes = ["else_", "annotations", "assertion", "members",
                        "else_annotations"]
+    dose_scope = ["assertion", "members"]
 
     def _as_pony(self):
         if self.else_:
@@ -733,6 +755,7 @@ class ForNode(Node):
     node_type = "for"
     node_attributes = ["annotations", "else_", "else_annotations",
                        "ids", "sequence", "members"]
+    dose_scope = ["sequence", "members"]
 
     def _as_pony(self):
         if self.else_:
@@ -755,6 +778,7 @@ class WithNode(Node):
     node_type = "with"
     node_attributes = ["annotations", "else_", "else_annotations",
                        "elems", "members"]
+    dose_scope = ["elems", "members"]
 
     def _as_pony(self):
         if self.else_:
@@ -777,6 +801,7 @@ class TryNode(Node):
     node_type = "try"
     node_attributes = ["annotations", "else_", "else_annotations",
                        "then", "then_annotations", "members"]
+    dose_scope = ["then"]
 
     def _as_pony(self):
         if self.else_:
@@ -820,11 +845,11 @@ class ArrayNode(Node):
         )
 
 
-
 class LambdaNode(Node):
     node_type = "lambda"
     node_attributes = ["annotations", "cap2", "id", "typeparams", "params",
                        "lambdacaptures", "type", "is_partial", "body", "cap"]
+    dose_scope = ["params", "body"]
 
     def _as_pony(self):
         return "{%s%s%s%s%s%s%s%s => %s}%s" % (
@@ -901,7 +926,6 @@ class LambdaTypeNode(Node):
                 )
 
 
-
 class BareLambdaTypeNode(Node):
     node_type = "barelambdatype"
     node_attributes = ["cap2", "id", "typeparams", "params", "return_type",
@@ -931,6 +955,7 @@ class RecoverNode(Node):
         args["members"] = self.members._as_pony()
         return "recover%(cap)s\n\x08%(members)s\n\x15end" % args
 
+
 class ElipsisNode(Node):
     node_type = "..."
 
@@ -941,6 +966,7 @@ class ElipsisNode(Node):
 class ObjectNode(Node):
     node_type = "object"
     node_attributes = ["annotations", "cap", "provides", "members"]
+    dose_scope = ["members"]
 
     def _as_pony(self):
         return "object%s%s%s\n\x08%s\n\x15end" % (

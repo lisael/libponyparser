@@ -8,13 +8,13 @@ from ponyparser.ast import nodes
 from ponyparser.utils import find_pony_stdlib_path
 
 
-parsers_cache = {}
+PARSERS_CACHE = {}
 
 def parse_code(data, expected=None, verbose=False, **parser_opts):
     cache_key = tuple(parser_opts.items())
-    if cache_key not in parsers_cache:
-        parsers_cache[cache_key] = Parser(**parser_opts)
-    parser = parsers_cache[cache_key]
+    if cache_key not in PARSERS_CACHE:
+        PARSERS_CACHE[cache_key] = Parser(**parser_opts)
+    parser = PARSERS_CACHE[cache_key]
     tree = parser.parse(data, lexer=Lexer(), debug=verbose)
     result = tree.as_dict() if isinstance(tree, nodes.Node) else tree
     if isinstance(result, list):

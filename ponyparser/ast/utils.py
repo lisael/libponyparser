@@ -2,6 +2,7 @@ from .visitor import Visitor
 from .nodes import ModuleNode, PackageNode
 
 
+
 class _RegisterParents(Visitor):
     def visit(self, node):
         if isinstance(node, (ModuleNode, PackageNode)):
