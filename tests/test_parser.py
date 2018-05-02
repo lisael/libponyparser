@@ -23,6 +23,7 @@ def parse_code(data, expected=None, verbose=False, **parser_opts):
         pprint(result)
     if expected is not None:
         assert(result == expected)
+    return tree
 
 
 VERBOSE = False
@@ -61,7 +62,16 @@ def test_ffidecl():
                                    'node_type': 'nominal',
                                    'package': None,
                                    'typeargs': []}]}}
-    parse_code(data, expected, verbose=True, start="use_ffi")
+    parse_code(data, expected, verbose=VERBOSE, start="use_ffi")
+
+
+def test_id():
+    data = """
+        hello
+    """
+    expected = {'id': 'hello', 'node_type': 'id'}
+    ast = parse_code(data, expected, verbose=VERBOSE, start="id")
+    assert data[slice(*ast.lexspan)] == 'hello'
 
 
 def test_call():

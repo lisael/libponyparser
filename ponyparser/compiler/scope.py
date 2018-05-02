@@ -129,7 +129,7 @@ class _SymbolResolver(Visitor):
             try:
                 pkg = self.program.resolve_package(use.package.strip('"'))
             except PackageNotFound as exc:
-                self.errors = exc
+                self.errors.append(exc)
                 continue
             compile_package(pkg)
             symbols = export_package_symbols(pkg)
@@ -146,13 +146,7 @@ def resolve_symbols(node, program):
     """
     res = _SymbolResolver(program)
     res.visit(node)
-
-
-
-
-
-
-
+    return res.errors
 
 
 

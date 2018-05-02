@@ -1,3 +1,6 @@
+from ponyparser.ast.utils import node_at_lexpos
+
+
 class NodeMeta(type):
 
     def __new__(cls, name, bases, attrs):
@@ -72,9 +75,13 @@ class Node(metaclass=NodeMeta):
         self.tokens = []
         p = kwargs.get("production")
         if p:
-            self.tokens = list(kwargs.get("production", [None]))[1:]
+            self.tokens = list(p)[1:]
             self.linespan = p.linespan(0)
             self.lexspan = p.lexspan(0)
+            if len(self.tokens):
+                last_token = self.tokens[-1]
+                if isinstance(last_token, str):
+                    self.lexspan = (self.lexspan[0], self.lexspan[1] + len(last_token))
 
     def as_dict(self):
         result = dict(node_type=self.node_type)
@@ -102,6 +109,9 @@ class Node(metaclass=NodeMeta):
             elif isinstance(att, list):
                 for i in iter_node_list(att):
                     yield i
+
+    def node_at_lexpos(self, pos):
+        return node_at_lexpos(self, pos)
 
 
     def _pony_attr(self, name, tmpl="%s", separator=", ", default=""):

@@ -42,4 +42,5 @@ def test_symbol_resolver():
     package_one = prg.resolve_package("package_one")
     compile_package(package_one)
     add_scopes(package_one)
-    resolve_symbols(package_one, prg)
+    errors = resolve_symbols(package_one, prg)
+    import ipdb; ipdb.set_trace()
